@@ -49,6 +49,8 @@ class MoveList():
     return newMove
 
   def Get(self, name):
+    if not name in self.Moveset:
+      raise ValueError(name + "Could not be found in the move set")
     return self.Moveset[name]
 
   def PrintAll(self):

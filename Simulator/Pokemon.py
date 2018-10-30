@@ -12,7 +12,7 @@ class Pokemon():
   BaseSPATK = 0
   BaseSPDEF = 0
   BaseSPEED = 0
-  PossibleMoves = MoveList()
+  PossibleMoves = AllMoves.Moveset
   
   CurrentHP = 0
   HP = 0
@@ -21,10 +21,7 @@ class Pokemon():
   SpAttack = 0
   SpDefense = 0
   Speed = 0
-  Move1 = None
-  Move2 = None
-  Move3 = None
-  Move4 = None
+  Moves = [None, None, None, None]
   #Ability
   #Nature
   #HeldItem
@@ -43,28 +40,42 @@ class Pokemon():
     self.BaseSPATK = spatk
     self.BaseSPDEF = spdef
     self.BaseSPEED = spd
+    self.PossibleMoves = AllMoves.Moveset
+    self.Moves = [None, None, None, None]
     self.__updateStats()
 
+  def SetPossibleMoves(self, moves):
+    self.PossibleMoves = {}
+    for move in moves:
+      if isinstance(move, str):
+        move = AllMoves.Get(move)
+      self.PossibleMoves[move.Name] = move
 
   def New(self, level):
-    return Pokemon(self.Name, self.Number, self.Type1, self.Type2, 
+    newPokemon = Pokemon(self.Name, self.Number, self.Type1, self.Type2, 
                     self.BaseHP, self.BaseATK, self.BaseDEF, 
                     self.BaseSPATK, self.BaseSPDEF, self.BaseSPEED, 
                     level)
+    newPokemon.PossibleMoves = self.PossibleMoves
+    return newPokemon
 
-  def AddMove(self, move, move2 = None, move3 = None, move4 = None):
+  def AddMove(self, move, ndx):
     if isinstance(move, str):
       move = AllMoves.Get(move)
-    self.Move1 = move
-    if isinstance(move2, str):
-      move2 = AllMoves.Get(move2)
-    self.Move2 = move2
-    if isinstance(move3, str):
-      move3 = AllMoves.Get(move3)
-    self.Move3 = move3
-    if isinstance(move4, str):
-      move4 = AllMoves.Get(move4)
-    self.Move4 = move4
+    if move and isinstance(ndx, int) and ndx < 4 and ndx >= 0:
+      if not move.Name in self.PossibleMoves:
+        raise ValueError("Move " + move.Name + " was not found in possible moves")
+      self.Moves[ndx] = move
+      return
+    raise ValueError("Move was not found passed properly")
+
+  def SetMoves(self, moves):
+    for ndx, move in enumerate(moves):
+      if isinstance(move, str):
+        move = AllMoves.Get(move)
+      if not move.Name in self.PossibleMoves:
+        raise ValueError("Move " + move.Name + " was not found in possible moves")
+      self.Moves[ndx] = move
 
   def __updateStats(self):
     self.__calcHP()
@@ -94,14 +105,9 @@ class Pokemon():
     output += "\tSpecial Defense : " + str(self.SpDefense) + "\n"
     output += "\tSpeed           : " + str(self.Speed) + "\n"
     output += "\tMoves: \n"
-    if self.Move1: 
-      output += "\t\t" + str(self.Move1.Name) + "\n"
-    if self.Move2: 
-      output += "\t\t" + str(self.Move2.Name) + "\n"
-    if self.Move3: 
-      output += "\t\t" + str(self.Move3.Name) + "\n"
-    if self.Move4: 
-      output += "\t\t" + str(self.Move4.Name) + "\n"
+    for move in self.Moves:
+      if move: 
+        output += "\t\t" + str(move.Name) + "\n"
     return output
 
   def Print(self):
@@ -114,11 +120,21 @@ class PokemonList():
   def __init__(self):
     self.Pokemonset = {}
     self.Pokedex = {}
+    return
 
   def AddSpecies(self, name, number, type1, type2, hp, atk, dff, spatk, spdef, spd):
     newPokemon = Pokemon(name, number, type1, type2, hp, atk, dff, spatk, spdef, spd)
     self.Pokemonset[name] = newPokemon
     self.Pokedex[number] = name
+    return
+
+  def SetSpeciesMoves(self, name, moves):
+    if isinstance(name, int):
+      name = self.Pokedex[name]
+    species = self.Pokemonset[name]
+    species.SetPossibleMoves(moves)
+    return
+    
 
   def MakeNewPokemon(self, name, level):
     if isinstance(name, int):
@@ -129,19 +145,23 @@ class PokemonList():
 
 AllPokemon = PokemonList()
 AllPokemon.AddSpecies("Bulbasaur", 1, Type.grass, Type.poison, 45, 49, 49, 65, 65, 45)
+AllPokemon.SetSpeciesMoves("Bulbasaur", ["Tackle", "Vine Whip"])
 AllPokemon.AddSpecies("Charmander", 4, Type.fire, Type.none, 39, 52, 43, 60, 50, 65)
+AllPokemon.SetSpeciesMoves("Charmander", ["Tackle", "Ember"])
 AllPokemon.AddSpecies("Squirtle", 6, Type.water, Type.none, 44, 48, 65, 50, 64, 43)
+AllPokemon.SetSpeciesMoves("Squirtle", ["Tackle", "Water Gun"])
 AllPokemon.AddSpecies("Pikachu", 25, Type.electric, Type.none, 35, 55, 40, 50, 50, 90)
+AllPokemon.SetSpeciesMoves("Pikachu", ["Tackle", "Thunder Shock"])
 
 if __name__ == "__main__":
   pika = AllPokemon.MakeNewPokemon(25, 50)
-  pika.AddMove("Tackle", "Thunder Shock")
+  pika.SetMoves(["Tackle", "Thunder Shock"])
   bulba = AllPokemon.MakeNewPokemon(1, 50)
-  bulba.AddMove("Tackle", "Vine Whip")
+  bulba.SetMoves(["Tackle", "Vine Whip"])
   char = AllPokemon.MakeNewPokemon(4, 50)
-  char.AddMove("Tackle", "Ember")
+  char.SetMoves(["Tackle", "Ember"])
   squirt = AllPokemon.MakeNewPokemon(6, 50)
-  squirt.AddMove("Tackle", "Water Gun")
+  squirt.SetMoves(["Tackle", "Water Gun"])
   
   print(bulba)
   print(char)
